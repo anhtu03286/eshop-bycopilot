@@ -35,6 +35,7 @@ Default local admin URL: `http://localhost:5174`
 
 ## Notes
 
-Backend CORS must allow admin origin. Set backend `CLIENT_ORIGIN` to include both storefront and admin origins, for example:
+Backend CORS must allow both storefront and admin origins. Configure backend env as:
 
-`CLIENT_ORIGIN=http://localhost:5173,http://localhost:5174`
+- `CLIENT_ORIGIN=http://localhost:5173`
+- `ADMIN_ORIGIN=http://localhost:5174`
