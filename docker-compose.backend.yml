@@ -1,0 +1,46 @@
+services:
+  database:
+    image: postgres:16-alpine
+    container_name: fashion-db
+    environment:
+      POSTGRES_DB: fashion
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d fashion"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fashion-backend
+    working_dir: /app
+    user: node
+    env_file:
+      - ./backend/.env
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@database:5432/fashion
+      CLIENT_ORIGIN: http://localhost:5173
+      ADMIN_ORIGIN: http://localhost:5174
+    command: sh -c "if [ ! -d node_modules ] || [ -z \"$(ls -A node_modules 2>/dev/null)\" ]; then npm ci --no-audit --no-fund; fi; npx prisma generate --schema=prisma/schema.prisma; npx prisma db push --skip-generate --schema=prisma/schema.prisma; npm run prisma:seed; npm run dev:docker"
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+    ports:
+      - "3000:3000"
+    depends_on:
+      database:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  backend_node_modules:

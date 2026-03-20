@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  CUSTOMER
+  ADMIN
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+}
+
+model User {
+  id           String         @id @default(cuid())
+  email        String         @unique
+  passwordHash String
+  role         Role           @default(CUSTOMER)
+  isActive     Boolean        @default(true)
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+  refreshTokens RefreshToken[]
+  carts        Cart[]
+  orders       Order[]
+}
+
+model RefreshToken {
+  id         String   @id
+  tokenHash  String
+  expiresAt  DateTime
+  revokedAt  DateTime?
+  createdAt  DateTime @default(now())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Product {
+  id          String         @id @default(cuid())
+  name        String
+  slug        String         @unique
+  description String?
+  priceCents  Int
+  currency    String         @default("usd")
+  inventory   Int            @default(0)
+  isActive    Boolean        @default(true)
+  categoryId  String?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  category    Category?      @relation(fields: [categoryId], references: [id])
+  images      ProductImage[]
+  cartItems   CartItem[]
+  orderItems  OrderItem[]
+
+  @@index([isActive])
+  @@index([categoryId])
+}
+
+model Category {
+  id          String    @id @default(cuid())
+  name        String    @unique
+  slug        String    @unique
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  products    Product[]
+}
+
+model ProductImage {
+  id        String   @id @default(cuid())
+  url       String
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+}
+
+model Cart {
+  id        String     @id @default(cuid())
+  userId    String
+  isActive  Boolean    @default(true)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+
+  @@index([userId, isActive])
+}
+
+model CartItem {
+  id         String   @id @default(cuid())
+  cartId     String
+  productId  String
+  quantity   Int
+  unitPriceCents Int
+  cart       Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  product    Product  @relation(fields: [productId], references: [id])
+
+  @@unique([cartId, productId])
+  @@index([productId])
+}
+
+model Order {
+  id            String         @id @default(cuid())
+  userId         String
+  status         OrderStatus    @default(PENDING)
+  paymentStatus  PaymentStatus  @default(PENDING)
+  totalCents     Int
+  currency       String         @default("usd")
+  stripeSessionId String?       @unique
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  user           User           @relation(fields: [userId], references: [id])
+  items          OrderItem[]
+  paymentRecords PaymentRecord[]
+
+  @@index([userId])
+}
+
+model OrderItem {
+  id            String  @id @default(cuid())
+  orderId       String
+  productId     String
+  productName   String
+  quantity      Int
+  unitPriceCents Int
+  order         Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product       Product @relation(fields: [productId], references: [id])
+}
+
+model PaymentRecord {
+  id               String        @id @default(cuid())
+  orderId           String
+  stripeEventId     String        @unique
+  stripePaymentIntentId String?
+  amountCents       Int
+  status            PaymentStatus
+  createdAt         DateTime      @default(now())
+  order             Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
+}

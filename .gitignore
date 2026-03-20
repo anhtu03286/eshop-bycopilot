@@ -1,0 +1,39 @@
+.env
+node_modules
+logs
+.DS_Store
+.vscode/
+.idea/
+
+# Root build artifacts
+dist/
+coverage/
+*.log
+
+# Frontend app artifacts
+frontend/.next/
+frontend/out/
+frontend/build/
+frontend/dist/
+frontend/coverage/
+frontend/node_modules/
+frontend/.env*
+frontend/*.tsbuildinfo
+
+# Admin app artifacts
+admin/node_modules/
+admin/dist/
+admin/.env*
+admin/.vite/
+admin/*.tsbuildinfo
+admin/vite.config.js
+admin/vite.config.d.ts
+
+# Backend artifacts
+backend/.env
+backend/.env.*
+backend/dist
+backend/coverage
+backend/node_modules
+backend/prisma/dev.db
+backend/prisma/dev.db-journal
